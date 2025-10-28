@@ -4,49 +4,57 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
+use Illuminate\Auth\Events\Verified;
+use App\Models\User;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\CourseController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ConfigController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StripeController;
+// Healthcheck
+Route::get('ping', fn() => response()->json(['ok' => true, 'time' => now()]));
 
-/**
- * Healthcheck simple
- * GET /api/ping
- */
-Route::get('ping', fn () => response()->json(['ok' => true, 'time' => now()]));
-
-/* -------------------------------------------------------------------------- */
-/*                               AUTH PÚBLICAS                                */
-/*     /api/auth/register  |  /api/auth/login                                 */
-/* -------------------------------------------------------------------------- */
+// Auth públicas
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->name('auth.register');
     Route::post('login',    [AuthController::class, 'login'])->name('auth.login');
 });
 
 /* -------------------------------------------------------------------------- */
-/*                      VERIFICACIÓN DE EMAIL (Laravel)                       */
-/* 1) El enlace del correo aterriza aquí (URL firmada)                        */
+/* 1) Verificar email (URL firmada: sin JWT, redirige al front)               */
+/* -------------------------------------------------------------------------- */
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = User::find($id);
+    if (! $user) {
+        return response()->json(['message' => 'Usuario no encontrado.'], 404);
+    }
+
+    // Validar hash del email para seguridad extra
+    if (! hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+        return response()->json(['message' => 'Hash inválido.'], 403);
+    }
+
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+    }
+
+    // Redirigir al front
+    $front = env('FRONTEND_URL', 'http://localhost:3000');
+    return redirect($front . '/auth/verified?status=success');
+})->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
+/* -------------------------------------------------------------------------- */
 /* 2) Reenviar correo de verificación (requiere JWT)                          */
 /* -------------------------------------------------------------------------- */
 
-// 1) Verificar email (URL firmada que marca email_verified_at y redirige al front)
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill(); // marca como verificado
-    return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/verified?status=success');
-})->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+Route::post('/email/verification-notification', function (Request $request) {
+    $user = $request->user();   // ✅ Intelephense lo entiende
+    if (!$user) return response()->json(['message' => 'Unauthenticated'], 401);
+    if ($user->hasVerifiedEmail()) return response()->json(['message' => 'Email already verified']);
 
-// 2) Reenviar correo de verificación (requiere JWT)
-Route::post('/email/verification-notification', function () {
-    $user = auth()->user(); // más robusto bajo jwt.auth
-    if (!$user) {
-        return response()->json(['message' => 'Unauthenticated'], 401);
-    }
-    if ($user->hasVerifiedEmail()) {
-        return response()->json(['message' => 'Email already verified']);
-    }
     $user->sendEmailVerificationNotification();
     return response()->json(['message' => 'Verification link sent']);
 })->middleware(['jwt.auth', 'throttle:6,1'])->name('verification.send');
@@ -58,10 +66,18 @@ Route::middleware('jwt.auth')->group(function () {
 
     /* ----------------------------- AUTH protegidas ----------------------------- */
     Route::prefix('auth')->group(function () {
-        Route::get('me',       [AuthController::class, 'me'])->name('auth.me');      // perfil
+        Route::get('me',       [AuthController::class, 'me'])->name('auth.me');
         Route::post('logout',  [AuthController::class, 'logout'])->name('auth.logout');
         Route::post('refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
     });
+
+    /* ----------------------------- STRIPE (JWT) ----------------------------- */
+    // Crear sesión de Checkout (usuario autenticado, no requiere email verificado)
+    Route::prefix('stripe')->group(function () {
+        Route::post('create-checkout', [StripeController::class, 'createCheckout'])
+            ->name('stripe.createCheckout');
+    });
+
 
     /* ---------------------------------------------------------------------- */
     /*    Rutas que requieren email verificado además de JWT (verified)      */
