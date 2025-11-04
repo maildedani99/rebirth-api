@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Contracts\Auth\MustVerifyEmail; // para instanceof
+use Illuminate\Contracts\Auth\MustVerifyEmail; // instanceof
 use Illuminate\Auth\Events\Verified;
 use App\Support\ApiResponse;
 
@@ -18,7 +18,7 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        // Normaliza
+        // Normaliza entradas
         $request->merge([
             'firstName'  => trim((string)$request->input('firstName')),
             'lastName'   => trim((string)$request->input('lastName')),
@@ -56,7 +56,7 @@ class AuthController extends Controller
             'phone.regex'      => 'Teléfono inválido (9 dígitos, opcional +34).',
         ]);
 
-        // Crear usuario con tus columnas (camelCase)
+        // Crear usuario (defaults coherentes con tinyint(1) en BD)
         $user = User::create([
             'firstName'        => $validated['firstName'],
             'lastName'         => $validated['lastName'],
@@ -70,29 +70,29 @@ class AuthController extends Controller
             'province'         => $validated['province'],
             'birthDate'        => $validated['birthDate'],
             'country'          => $validated['country'],
-            // Estados por defecto
+
             'role'             => 'client',
-            'isActive'         => false,
-            'status'           => 'pending',
+            'isActive'         => 0,            // tinyint
+            'status'           => 'pending',    // <-- VARCHAR en BD
             'coursePriceCents' => 0,
             'tutor_id'         => null,
-            'depositStatus'    => 'pending',
-            'finalPayment'     => 'pending',
-            'contractSigned'   => false,
-            'marketingConsent' => $validated['marketingConsent'] ?? false,
+
+            'depositStatus'    => 0,            // tinyint (antes 'pending')
+            'finalPayment'     => 0,            // tinyint (antes 'pending')
+            'contractSigned'   => 0,            // tinyint/bool
+            'marketingConsent' => (bool)($validated['marketingConsent'] ?? false),
         ]);
 
         /** @var \Tymon\JWTAuth\JWTGuard $guard */
         $guard = auth('api');
         $token = $guard->login($user);
 
-        // 📧 Enviar verificación de email si el modelo lo requiere
+        // Envío de verificación de email si el modelo lo requiere
         if ($user instanceof MustVerifyEmail) {
             try {
                 $user->sendEmailVerificationNotification();
             } catch (\Throwable $e) {
                 Log::error('Error enviando verificación de email: '.$e->getMessage());
-                // No interrumpimos el registro si falla SMTP
             }
         }
 
@@ -202,7 +202,7 @@ class AuthController extends Controller
             'phone.regex'      => 'Teléfono inválido (9 dígitos, opcional +34).',
         ]);
 
-        // Crea el usuario (camelCase)
+        // Crea el usuario con defaults correctos en tinyint(1)
         $user = User::create([
             'firstName'   => $validated['firstName'],
             'lastName'    => $validated['lastName'],
@@ -218,14 +218,15 @@ class AuthController extends Controller
             'country'     => $validated['country'],
             'role'        => $validated['role'],
             'isActive'    => (bool)($validated['isActive'] ?? true),
-            // defaults
-            'status'           => 'pending',
+
+            'status'           => 'pending', // varchar
             'coursePriceCents' => 0,
             'tutor_id'         => null,
-            'depositStatus'    => 'pending',
-            'finalPayment'     => 'pending',
-            'contractSigned'   => false,
-            'marketingConsent' => false,
+
+            'depositStatus'    => 0, // tinyint
+            'finalPayment'     => 0, // tinyint
+            'contractSigned'   => 0, // tinyint/bool
+            'marketingConsent' => 0,
         ]);
 
         return ApiResponse::created($user, 'Usuario creado correctamente');

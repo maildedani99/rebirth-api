@@ -36,7 +36,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'finalPayment',
         'contractSigned',
         'marketingConsent',
-        'email_verified_at', // 👈 añadimos esto si no lo tenías ya en fillable
+        'email_verified_at',
+        'lopdAccepted',
     ];
 
     protected $hidden = [
@@ -51,7 +52,11 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'contractDate'     => 'datetime',
         'marketingConsent' => 'boolean',
         'coursePriceCents' => 'integer',
-        'email_verified_at' => 'datetime', // 👈 para el timestamp de verificación
+        'email_verified_at' => 'datetime',
+        'depositStatus' => 'boolean',
+        'finalPayment' => 'boolean',
+        'depositStatus'    => 'boolean',
+        'lopdAccepted'     => 'boolean',
     ];
 
     // --- Relaciones ---

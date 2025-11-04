@@ -88,6 +88,8 @@ Route::middleware('jwt.auth')->group(function () {
         Route::prefix('contracts')->group(function () {
             Route::post('course/accept', [ContractController::class, 'acceptCourse'])->name('contracts.course.accept');
             // Route::post('lopd/accept',  [ContractController::class, 'acceptLopd']);
+            Route::post('users/{id}/lopd', [UsersController::class, 'acceptLopd']);
+
         });
 
         /* -------------------------- ZONA SOLO ADMIN -------------------------- */
