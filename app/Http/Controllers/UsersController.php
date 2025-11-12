@@ -10,7 +10,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 
-class AuthController extends Controller
+class UsersController extends Controller
 {
     /**
      * Registro
