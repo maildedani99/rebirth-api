@@ -13,6 +13,8 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StripeController;
+use App\Http\Controllers\StripeWebhookController;
+
 // Healthcheck
 Route::get('ping', fn() => response()->json(['ok' => true, 'time' => now()]));
 
@@ -21,6 +23,10 @@ Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->name('auth.register');
     Route::post('login',    [AuthController::class, 'login'])->name('auth.login');
 });
+
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhook');
+
 
 /* -------------------------------------------------------------------------- */
 /* 1) Verificar email (URL firmada: sin JWT, redirige al front)               */
