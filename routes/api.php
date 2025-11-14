@@ -14,6 +14,25 @@ use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\StripeWebhookController;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/db-test', function () {
+    try {
+        DB::connection()->getPdo();
+        $dbName = DB::connection()->getDatabaseName();
+
+        return response()->json([
+            'ok' => true,
+            'database' => $dbName,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'ok' => false,
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
 
 // Healthcheck
 Route::get('ping', fn() => response()->json(['ok' => true, 'time' => now()]));
