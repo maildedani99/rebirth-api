@@ -84,6 +84,9 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
