@@ -66,7 +66,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
     }
 
     // Redirigir al front
-    $front = env('FRONTEND_URL', 'http://localhost:3000');
+    $front = env('FRONTEND_URL');
     return redirect($front . '/auth/verified?status=success');
 })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
 

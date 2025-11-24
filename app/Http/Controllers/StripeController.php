@@ -36,9 +36,9 @@ class StripeController extends Controller
 
         Stripe::setApiKey(config('services.stripe.secret', env('STRIPE_SECRET')));
 
-        $successUrl = rtrim(env('FRONT_URL', 'http://localhost:3000'), '/')
+        $successUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/')
             . '/campus/inactive/payment/success?session_id={CHECKOUT_SESSION_ID}';
-        $cancelUrl = rtrim(env('FRONT_URL', 'http://localhost:3000'), '/')
+        $cancelUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/')
             . '/campus/inactive/payment/cancel';
 
         $session = StripeSession::create([
