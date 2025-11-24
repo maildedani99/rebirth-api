@@ -34,4 +34,20 @@ class ContractController extends Controller
             'user' => $user,
         ], 'Contrato aceptado');
     }
+
+
+    public function acceptLopd(Request $request)
+{
+    $user = $request->user();
+
+    $user->lopdAccepted = true;
+    $user->marketingConsent = (bool) $request->input('marketingConsent', false);
+    $user->save();
+
+    return ApiResponse::success([
+        'lopdAccepted'     => $user->lopdAccepted,
+        'marketingConsent' => $user->marketingConsent,
+    ]);
+}
+
 }

@@ -111,9 +111,10 @@ Route::middleware('jwt.auth')->group(function () {
         /* ------------------ CONTRATOS (usuario autenticado) ------------------ */
         Route::prefix('contracts')->group(function () {
             Route::post('course/accept', [ContractController::class, 'acceptCourse'])->name('contracts.course.accept');
-            // Route::post('lopd/accept',  [ContractController::class, 'acceptLopd']);
-            Route::post('users/{id}/lopd', [UsersController::class, 'acceptLopd']);
+            Route::post('lopd/accept', [ContractController::class, 'acceptLopd'])
+                ->name('contracts.lopd.accept');
 
+            /* Route::post('users/{id}/lopd', [UsersController::class, 'acceptLopd']); */
         });
 
         /* -------------------------- ZONA SOLO ADMIN -------------------------- */
