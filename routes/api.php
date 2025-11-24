@@ -36,6 +36,10 @@ Route::get('/db-test', function () {
 // Healthcheck
 Route::get('ping', fn() => response()->json(['ok' => true, 'time' => now()]));
 
+
+Route::post('/webhook/stripe', [StripeWebhookController::class, 'handle']);
+
+
 // Auth públicas
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->name('auth.register');
@@ -147,7 +151,6 @@ Route::middleware('jwt.auth')->group(function () {
             Route::get('users/{id}/balances', [PaymentController::class, 'balancesForClient'])->name('users.balances');
         });
 
-        Route::post('api.webhook', [StripeController::class, 'handleWebhook']);
 
     });
 });
