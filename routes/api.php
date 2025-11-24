@@ -37,7 +37,6 @@ Route::get('/db-test', function () {
 Route::get('ping', fn() => response()->json(['ok' => true, 'time' => now()]));
 
 
-Route::post('/webhook/stripe', [StripeWebhookController::class, 'handle']);
 
 
 // Auth públicas
@@ -46,8 +45,7 @@ Route::prefix('auth')->group(function () {
     Route::post('login',    [AuthController::class, 'login'])->name('auth.login');
 });
 
-Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])
-    ->name('stripe.webhook');
+
 
 
 /* -------------------------------------------------------------------------- */
