@@ -13,6 +13,11 @@ class StripeWebhookController extends Controller
 {
     public function handle(Request $request)
     {
+
+
+           Log::info('Stripe webhook recibido', [
+        'headers' => $request->headers->all(),
+    ]);
         // Clave secreta del webhook (config/services.php)
         $endpoint_secret = config('services.stripe.webhook_secret') ?? env('STRIPE_WEBHOOK_SECRET');
 
