@@ -137,12 +137,17 @@ Route::middleware('jwt.auth')->group(function () {
             Route::post('payments/{payment}/refund',    [PaymentController::class, 'refund'])->name('payments.refund');
 
             // USUARIOS
-            Route::get('users/clients',  [UsersController::class, 'listClients'])->name('users.clients');
-            Route::get('users/members',  [UsersController::class, 'listMembers'])->name('users.members');
+            Route::middleware('auth:api')->group(function () {
+                Route::get('users/clients',  [UsersController::class, 'listClients'])->name('users.clients');
+                Route::get('users/members',  [UsersController::class, 'listMembers'])->name('users.members');
+            });
             Route::get('users/{id}',     [UsersController::class, 'show'])->name('users.show');
             Route::put('users/{id}',     [UsersController::class, 'update'])->name('users.update');
             Route::post('users',         [AuthController::class, 'store'])->name('users.store');
             Route::get('users/{id}/balances', [PaymentController::class, 'balancesForClient'])->name('users.balances');
         });
+
+        Route::post('api.webhook', [StripeController::class, 'handleWebhook']);
+
     });
 });
