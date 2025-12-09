@@ -15,6 +15,35 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+
+
+
+Route::get('/health', function (Request $request) {
+    try {
+        $start = microtime(true);
+        DB::connection()->getPdo();
+        $ms = (microtime(true) - $start) * 1000;
+
+        return response()->json([
+            'ok'   => true,
+            'db'   => 'connected',
+            'time' => now()->toDateTimeString(),
+            'db_ms' => round($ms, 2),
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('Healthcheck DB error', [
+            'exception' => $e,
+        ]);
+
+        return response()->json([
+            'ok'  => false,
+            'db'  => 'error',
+            'msg' => $e->getMessage(),
+        ], 500);
+    }
+});
 
 Route::get('/db-test', function () {
     try {
