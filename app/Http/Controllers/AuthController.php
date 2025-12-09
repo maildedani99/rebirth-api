@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Auth\MustVerifyEmail; // instanceof
 use Illuminate\Auth\Events\Verified;
 use App\Support\ApiResponse;
+use Illuminate\Validation\ValidationException;
+
 
 class AuthController extends Controller
 {
@@ -108,31 +110,65 @@ class AuthController extends Controller
     /**
      * Login con JWT.
      */
-    public function login(Request $request)
-    {
+   public function login(Request $request)
+{
+    try {
+        // 1) Validación de entrada
         $credentials = $request->validate([
-            'email'    => ['required','email'],
-            'password' => ['required','string'],
+            'email'    => ['required', 'email'],
+            'password' => ['required', 'string'],
         ]);
 
         /** @var \Tymon\JWTAuth\JWTGuard $guard */
         $guard = auth('api');
 
-        $token = $guard->attempt($credentials);
-        if (!$token) {
+        // 2) Intento de login
+        if (!$token = $guard->attempt($credentials)) {
             return ApiResponse::error('Credenciales inválidas', 401);
         }
 
+        /** @var \App\Models\User $user */
         $user = $guard->user();
 
+        // 3) Derivar email_verified de forma segura
+        $emailVerified = false;
+        if ($user instanceof MustVerifyEmail) {
+            $emailVerified = $user->hasVerifiedEmail();
+        }
+
+        // 4) Reducir el usuario a datos "planos" (sin relaciones raras)
+        $userData = [
+            'id'        => $user->id,
+            'email'     => $user->email,
+            'firstName' => $user->firstName ?? null,
+            'lastName'  => $user->lastName ?? null,
+            'role'      => $user->role ?? null,
+            'isActive'  => (bool)($user->isActive ?? true),
+            // añade aquí sólo los campos que realmente necesita el front
+        ];
+
+        // 5) Respuesta OK
         return ApiResponse::ok([
             'token'          => $token,
             'token_type'     => 'bearer',
             'expires_in'     => $guard->factory()->getTTL() * 60,
-            'user'           => $user,
-            'email_verified' => (bool) optional($user)->hasVerifiedEmail(),
+            'user'           => $userData,
+            'email_verified' => $emailVerified,
         ], 'Login correcto');
+    } catch (ValidationException $e) {
+        // Errores de validación → 422
+        return ApiResponse::error('Datos de login inválidos', 422, $e->errors());
+    } catch (\Throwable $e) {
+        // Cualquier cosa rara → la logueamos y devolvemos 500 controlado
+        Log::error('Error en login', [
+            'msg'   => $e->getMessage(),
+            'code'  => $e->getCode(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return ApiResponse::error('Error interno en el login', 500);
     }
+}
 
     /**
      * Perfil (requiere jwt.auth).
