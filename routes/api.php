@@ -15,9 +15,24 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+Route::get('/egress-ip', function () {
+    try {
+        $ip = Http::timeout(5)->get('https://api.ipify.org')->body();
 
+        return response()->json([
+            'ok' => true,
+            'egress_ip' => trim($ip),
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'ok' => false,
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
 
 
 Route::get('/health', function (Request $request) {

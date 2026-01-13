@@ -26,19 +26,15 @@ return new class extends Migration
             ")
         ]);
 
-        Schema::table('users', function (Blueprint $table) {
-            // Cambiamos el tipo de columna a boolean
-            $table->boolean('depositStatus')->default(0)->change();
-            $table->boolean('finalPayment')->default(0)->change();
-        });
+        // Evitamos depender de doctrine/dbal usando SQL nativo
+        DB::statement("ALTER TABLE users MODIFY depositStatus TINYINT(1) NOT NULL DEFAULT 0");
+        DB::statement("ALTER TABLE users MODIFY finalPayment TINYINT(1) NOT NULL DEFAULT 0");
     }
 
     public function down(): void
     {
-        // Si alguna vez se revierte, podríamos devolverlas a string
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('depositStatus', 20)->default('pending')->change();
-            $table->string('finalPayment', 20)->default('pending')->change();
-        });
+        // Si alguna vez se revierte, devolvemos el tipo string
+        DB::statement("ALTER TABLE users MODIFY depositStatus VARCHAR(20) NOT NULL DEFAULT 'pending'");
+        DB::statement("ALTER TABLE users MODIFY finalPayment VARCHAR(20) NOT NULL DEFAULT 'pending'");
     }
 };
