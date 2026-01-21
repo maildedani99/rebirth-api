@@ -305,8 +305,8 @@ class AuthController extends Controller
             event(new Verified($user));
         }
 
-        $front = env('FRONTEND_URL', 'http://localhost:3000');
-        return redirect($front . '/verified?status=success');
+        $front = rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/');
+        return redirect($front . '/auth/verified?status=success');
     }
 
     /**
