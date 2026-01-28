@@ -80,6 +80,9 @@ Route::get('/db-test', function () {
 // Healthcheck
 Route::get('ping', fn() => response()->json(['ok' => true, 'time' => now()]));
 
+// ✅ STRIPE WEBHOOK (NO JWT)
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhook');
 
 
 
